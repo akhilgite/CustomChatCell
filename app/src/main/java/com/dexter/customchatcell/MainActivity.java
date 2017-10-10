@@ -1,6 +1,7 @@
 package com.dexter.customchatcell;
 
 import android.content.Context;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutCompat;
@@ -10,6 +11,9 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+
+import com.dexter.customchatcell.util.Config;
+
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
@@ -17,6 +21,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Point size=new Point();
+        getWindowManager().getDefaultDisplay().getSize(size);
+        Config.getInstance().setScreenHeight(size.y);
+        Config.getInstance().setScreenWidth(size.x);
 
         ArrayList<MessageObject> chatMessages=new ArrayList<>();
         chatMessages.add(new MessageObject("Hi",MessageObject.SenderType.SELF));
@@ -62,28 +70,19 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
+            CustomCell cell=new CustomCell(context,chatMessages.get(position));
             if (chatMessages.get(position).getSender()==MessageObject.SenderType.SELF){
                 holder.LL.setGravity(Gravity.RIGHT);
                 holder.LL.setHorizontalGravity(Gravity.RIGHT);
-                CustomCell cell=new CustomCell(context,chatMessages.get(position));
-
-                LinearLayout LL2=new LinearLayout(context);
-                LL2.setOrientation(LinearLayout.VERTICAL);
-                LL2.setLayoutParams(new LinearLayoutCompat.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                LL2.addView(cell);
-                holder.LL.addView(LL2);
             }else if (chatMessages.get(position).getSender()==MessageObject.SenderType.OTHERS){
                 holder.LL.setGravity(Gravity.LEFT);
                 holder.LL.setHorizontalGravity(Gravity.LEFT);
-                CustomCell cell=new CustomCell(context,chatMessages.get(position));
-
-
-                LinearLayout LL2=new LinearLayout(context);
-                LL2.setOrientation(LinearLayout.VERTICAL);
-                LL2.setLayoutParams(new LinearLayoutCompat.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                LL2.addView(cell);
-                holder.LL.addView(LL2);
             }
+            LinearLayout LL2=new LinearLayout(context);
+            LL2.setOrientation(LinearLayout.VERTICAL);
+            LL2.setLayoutParams(new LinearLayoutCompat.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            LL2.addView(cell);
+            holder.LL.addView(LL2);
         }
 
         @Override

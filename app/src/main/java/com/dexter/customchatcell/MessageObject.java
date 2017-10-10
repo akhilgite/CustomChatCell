@@ -10,6 +10,10 @@ public class MessageObject {
         int OTHERS=1;
     }
 
+    public interface MediaType{
+
+    }
+
     private String message;
     private int sender;
 

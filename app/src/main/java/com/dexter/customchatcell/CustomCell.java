@@ -6,11 +6,18 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.support.v7.widget.LinearLayoutCompat;
+import android.support.v7.widget.RecyclerView;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+
+import com.dexter.customchatcell.util.Config;
+import com.dexter.customchatcell.util.MediaType;
 
 /**
  * Created by 10644291 on 06-10-2017.
@@ -19,36 +26,59 @@ import android.view.View;
 public class CustomCell extends View {
     final int SELF=0;
     final int OTHERS=1;
+    private final int SCREEN_WIDTH;
+    private final int SCREEN_HEIGHT;
 
     String mText = "";
+    int drawable;
+    int senderType;
     int messageType;
     TextPaint mTextPaint;
     StaticLayout mStaticLayout;
+    ImageView imageView;
     int width;
     int height;
     Path path;
     Paint pathPaint;
 
-    // use this constructor if creating MyView programmatically
+
+    // use this constructor if creating CustomCell programmatically
     public CustomCell(Context context, MessageObject data) {
         super(context);
+        SCREEN_HEIGHT = Config.getInstance().getScreenHeight();
+        SCREEN_WIDTH = Config.getInstance().getScreenWidth();
         mText=data.getMessage();
-        messageType=data.getSender();
+        senderType=data.getSender();
+        initView(messageType);
         initLabelView();
+    }
+
+    private void initView(int messageType) {
+        switch (messageType){
+            case MediaType.TEXT:
+                initLabelView();
+                break;
+            case MediaType.IMAGE:
+                initImageView();
+                break;
+
+        }
     }
 
     // this constructor is used when created from xml
     public CustomCell(Context context, AttributeSet attrs) {
         super(context, attrs);
+        SCREEN_HEIGHT = Config.getInstance().getScreenHeight();
+        SCREEN_WIDTH = Config.getInstance().getScreenWidth();
         initLabelView();
     }
 
     private void initLabelView() {
         pathPaint=new Paint();
         path=new Path();
-        if (messageType==SELF)
+        if (senderType==SELF)
             setPadding(dp(7),dp(7),dp(14),dp(7));
-        else if (messageType==OTHERS)
+        else if (senderType==OTHERS)
             setPadding(dp(14),dp(7),dp(7),dp(7));
 
         mTextPaint = new TextPaint();
@@ -69,14 +99,20 @@ public class CustomCell extends View {
         // mStaticLayout = builder.build();
     }
 
+    private void initImageView() {
+        imageView=new ImageView(getContext());
+        imageView.setLayoutParams(new LinearLayoutCompat.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         // Tell the parent layout how big this view would like to be
         // but still respect any requirements (measure specs) that are passed down.
-        if (messageType==SELF)
+        if (senderType==SELF)
             setPadding(dp(7),dp(7),dp(14),dp(7));
-        else if (messageType==OTHERS)
+        else if (senderType==OTHERS)
             setPadding(dp(14),dp(7),dp(7),dp(7));
+
         // determine the width
         int width;
         int widthMode = MeasureSpec.getMode(widthMeasureSpec);
@@ -88,8 +124,14 @@ public class CustomCell extends View {
             if (widthMode == MeasureSpec.AT_MOST) {
                 if (width > widthRequirement) {
                     width = widthRequirement;
+                    if (width>(SCREEN_WIDTH*3)/4)
+                        width=(SCREEN_WIDTH*3)/4+dp(5);
                     // too long for a single line so relayout as multiline
-                    mStaticLayout = new StaticLayout(mText, mTextPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
+                    if (messageType==MediaType.TEXT)
+                        mStaticLayout = new StaticLayout(mText, mTextPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
+                    else if (messageType==MediaType.IMAGE)
+                        imageView.setLayoutParams(new LinearLayoutCompat.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
                 }
             }
         }
@@ -106,7 +148,7 @@ public class CustomCell extends View {
                 height = Math.min(height, heightRequirement);
             }
         }
-
+        //cell width and height
         this.width=width;
         this.height=height;
         // Required call: set width and height
@@ -123,48 +165,39 @@ public class CustomCell extends View {
         int offset=dp(7);
         int radius=10;
 
-
-        /*if (messageType==SELF){
-            path.moveTo(0,0);
-            path.lineTo(0,height);
-            path.lineTo(width,height);
-            path.lineTo(width-offset,height-offset);
-            path.lineTo(width-offset,0);
-            path.lineTo(0,0);
-            path.close();
-        }else {
-            path.moveTo(offset,0);
-            path.lineTo(offset,height-offset);
-            path.lineTo(0,height);
-            path.lineTo(width,height);
-            path.lineTo(width,0);
-            path.lineTo(offset,0);
-            path.close();
-        }*/
-        if (messageType==SELF){
-            canvas.drawRoundRect(new RectF(0,0,width-offset,height),radius,radius,pathPaint);
-            path.moveTo(width-offset,(height-offset/2));
-            path.lineTo(width,height);
-            path.lineTo(width-(2*offset),height);
-            path.lineTo(width-offset,height-offset/2);
-            path.close();
-        }else {
-            canvas.drawRoundRect(new RectF(0+offset,0,(width),height),radius,radius,pathPaint);
-            path.moveTo(offset, height - offset/2);
-            path.lineTo(0, height);
-            path.lineTo(2*offset, height);
-            path.lineTo(offset, height - offset/2);
-            path.close();
+        //drawing background bubble on the canvas after adjusting for offset
+        if (messageType==MediaType.TEXT) {
+            if (senderType == SELF) {
+                canvas.drawRoundRect(new RectF(0, 0, width - offset, height), radius, radius, pathPaint);
+                path.moveTo(width - offset, (height - offset / 2));
+                path.lineTo(width, height);
+                path.lineTo(width - (2 * offset), height);
+                path.lineTo(width - offset, height - offset / 2);
+                path.close();
+            } else {
+                canvas.drawRoundRect(new RectF(0 + offset, 0, (width), height), radius, radius, pathPaint);
+                path.moveTo(offset, height - offset / 2);
+                path.lineTo(0, height);
+                path.lineTo(2 * offset, height);
+                path.lineTo(offset, height - offset / 2);
+                path.close();
+            }
+            canvas.drawPath(path, pathPaint);
+        }else if (messageType==MediaType.IMAGE){
+            canvas.drawRoundRect(new RectF(0, 0, width , height), radius, radius, pathPaint);
         }
         canvas.drawPath(path,pathPaint);
 
         // draw the text on the canvas after adjusting for padding
         canvas.save();
         canvas.translate(getPaddingLeft(), getPaddingTop());
-        mStaticLayout.draw(canvas);
+        if (messageType==MediaType.TEXT)
+            mStaticLayout.draw(canvas);
+        else imageView.draw(canvas);
         canvas.restore();
     }
 
+    //pixel to dp converter
     int dp(int pixel){
         return (int)(getResources().getDisplayMetrics().density*pixel);
     }
