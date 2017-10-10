@@ -6,11 +6,14 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
+import android.support.v7.widget.LinearLayoutCompat;
+import android.support.v7.widget.RecyclerView;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import com.dexter.customchatcell.util.Config;
@@ -97,7 +100,8 @@ public class CustomCell extends View {
     }
 
     private void initImageView() {
-
+        imageView=new ImageView(getContext());
+        imageView.setLayoutParams(new LinearLayoutCompat.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
     }
 
     @Override
@@ -123,7 +127,11 @@ public class CustomCell extends View {
                     if (width>(SCREEN_WIDTH*3)/4)
                         width=(SCREEN_WIDTH*3)/4+dp(5);
                     // too long for a single line so relayout as multiline
-                    mStaticLayout = new StaticLayout(mText, mTextPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
+                    if (messageType==MediaType.TEXT)
+                        mStaticLayout = new StaticLayout(mText, mTextPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0, false);
+                    else if (messageType==MediaType.IMAGE)
+                        imageView.setLayoutParams(new LinearLayoutCompat.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
                 }
             }
         }
@@ -158,27 +166,33 @@ public class CustomCell extends View {
         int radius=10;
 
         //drawing background bubble on the canvas after adjusting for offset
-        if (senderType==SELF){
-            canvas.drawRoundRect(new RectF(0,0,width-offset,height),radius,radius,pathPaint);
-            path.moveTo(width-offset,(height-offset/2));
-            path.lineTo(width,height);
-            path.lineTo(width-(2*offset),height);
-            path.lineTo(width-offset,height-offset/2);
-            path.close();
-        }else {
-            canvas.drawRoundRect(new RectF(0+offset,0,(width),height),radius,radius,pathPaint);
-            path.moveTo(offset, height - offset/2);
-            path.lineTo(0, height);
-            path.lineTo(2*offset, height);
-            path.lineTo(offset, height - offset/2);
-            path.close();
+        if (messageType==MediaType.TEXT) {
+            if (senderType == SELF) {
+                canvas.drawRoundRect(new RectF(0, 0, width - offset, height), radius, radius, pathPaint);
+                path.moveTo(width - offset, (height - offset / 2));
+                path.lineTo(width, height);
+                path.lineTo(width - (2 * offset), height);
+                path.lineTo(width - offset, height - offset / 2);
+                path.close();
+            } else {
+                canvas.drawRoundRect(new RectF(0 + offset, 0, (width), height), radius, radius, pathPaint);
+                path.moveTo(offset, height - offset / 2);
+                path.lineTo(0, height);
+                path.lineTo(2 * offset, height);
+                path.lineTo(offset, height - offset / 2);
+                path.close();
+            }
+            canvas.drawPath(path, pathPaint);
+        }else if (messageType==MediaType.IMAGE){
+            canvas.drawRoundRect(new RectF(0, 0, width , height), radius, radius, pathPaint);
         }
-        canvas.drawPath(path,pathPaint);
 
         // draw the text on the canvas after adjusting for padding
         canvas.save();
         canvas.translate(getPaddingLeft(), getPaddingTop());
-        mStaticLayout.draw(canvas);
+        if (messageType==MediaType.TEXT)
+            mStaticLayout.draw(canvas);
+        else imageView.draw(canvas);
         canvas.restore();
     }
 
