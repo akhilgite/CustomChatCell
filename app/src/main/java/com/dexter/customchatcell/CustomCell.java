@@ -158,8 +158,6 @@ public class CustomCell extends View {
         }
         canvas.drawPath(path,pathPaint);
 
-
-
         // draw the text on the canvas after adjusting for padding
         canvas.save();
         canvas.translate(getPaddingLeft(), getPaddingTop());
